@@ -35,4 +35,5 @@ Thumbs.db
 token.json
 
 # Claude
-.claude/
+.claude/*
+!.claude/CLAUDE.md
