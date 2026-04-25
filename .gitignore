@@ -9,10 +9,10 @@ build/
 *.egg
 
 # Virtual environments
-venv/
+venv
 env/
 ENV/
-.venv/
+.venv
 
 # Environment files
 .env
