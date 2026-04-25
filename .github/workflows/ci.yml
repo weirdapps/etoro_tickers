@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.12'
+
+      - name: Validate instruments.csv
+        run: |
+          python <<'PY'
+          import csv, sys
+          expected_columns = [
+              'instrumentID', 'instrumentDisplayName', 'symbolFull',
+              'instrumentTypeID', 'exchangeID', 'priceSource',
+              'hasExpirationDate', 'isInternalInstrument', 'image_count',
+          ]
+          with open('instruments.csv') as f:
+              reader = csv.DictReader(f)
+              if reader.fieldnames != expected_columns:
+                  print(f'❌ Column mismatch:\n  expected: {expected_columns}\n  got: {reader.fieldnames}')
+                  sys.exit(1)
+              rows = list(reader)
+              if len(rows) < 1000:
+                  print(f'❌ Suspicious row count: {len(rows)} (expected ≥1000)')
+                  sys.exit(1)
+              # Sanity: instrumentID must be unique + numeric
+              ids = [r['instrumentID'] for r in rows]
+              if len(set(ids)) != len(ids):
+                  print(f'❌ Duplicate instrumentIDs')
+                  sys.exit(1)
+              for r in rows[:5]:
+                  int(r['instrumentID'])  # raises if non-numeric
+              print(f'✓ {len(rows)} instruments, columns OK, IDs unique')
+          PY
