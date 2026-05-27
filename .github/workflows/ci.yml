@@ -22,11 +22,7 @@ jobs:
         run: |
           python <<'PY'
           import csv, sys
-          expected_columns = [
-              'instrumentID', 'instrumentDisplayName', 'symbolFull',
-              'instrumentTypeID', 'exchangeID', 'priceSource',
-              'hasExpirationDate', 'isInternalInstrument', 'image_count',
-          ]
+          expected_columns = ['symbol', 'company', 'exchange']
           with open('instruments.csv') as f:
               reader = csv.DictReader(f)
               if reader.fieldnames != expected_columns:
@@ -36,12 +32,13 @@ jobs:
               if len(rows) < 1000:
                   print(f'❌ Suspicious row count: {len(rows)} (expected ≥1000)')
                   sys.exit(1)
-              # Sanity: instrumentID must be unique + numeric
-              ids = [r['instrumentID'] for r in rows]
-              if len(set(ids)) != len(ids):
-                  print(f'❌ Duplicate instrumentIDs')
+              symbols = [r['symbol'] for r in rows]
+              if len(set(symbols)) != len(symbols):
+                  print(f'❌ Duplicate symbols')
                   sys.exit(1)
-              for r in rows[:5]:
-                  int(r['instrumentID'])  # raises if non-numeric
-              print(f'✓ {len(rows)} instruments, columns OK, IDs unique')
+              empty = [r for r in rows if not r['symbol'].strip()]
+              if empty:
+                  print(f'❌ {len(empty)} rows with empty symbol')
+                  sys.exit(1)
+              print(f'✓ {len(rows)} instruments, columns OK, symbols unique')
           PY
