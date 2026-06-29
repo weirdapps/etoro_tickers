@@ -20,7 +20,13 @@ etoro_tickers/
 - `company`: human-readable name
 - `exchange`: exchange code
 
-Source: `GET https://www.etoro.com/api/public/v1/instruments/discover` (Stocks + ETFs).
+Source: `GET https://www.etoro.com/api/public/v1/instruments/discover` (Stocks + ETFs). Legacy alias `https://www.etoro.com/api/public/v1/...` still works.
+
+## eToro API
+
+Canonical domain: `https://www.etoro.com/api/public/v1`
+Legacy alias: `https://www.etoro.com/api/public/v1` (works but not canonical)
+Auth: X-API-KEY + X-USER-KEY (regular, not PERSONAL) + X-REQUEST-ID (UUID) + User-Agent
 
 ## Refreshing the Data
 
