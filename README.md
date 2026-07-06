@@ -1,6 +1,6 @@
-# eToro Tickers
+# etoro_tickers
 
-Reference dataset of every stock and ETF tradeable on the eToro platform, normalised to Yahoo Finance symbol format.
+Reference CSV of every stock and ETF tradeable on eToro, normalised to Yahoo Finance symbol format.
 
 [![CI](https://github.com/weirdapps/etoro_tickers/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/weirdapps/etoro_tickers/actions/workflows/ci.yml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=weirdapps_etoro_tickers&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=weirdapps_etoro_tickers)
@@ -8,53 +8,85 @@ Reference dataset of every stock and ETF tradeable on the eToro platform, normal
 
 ## What this repository is
 
-A single-file, pure-data repository. `instruments.csv` holds 12,544 instruments (stocks + ETFs) covering 48 exchanges worldwide, refreshed periodically from the eToro Public API. There is no application code; the repository exists so downstream tools can pin to a reviewed, versioned universe file rather than re-scraping the API on every run.
+A single-file, pure-data repository. `instruments.csv` holds every stock and ETF that eToro publishes through its Public API, converted to Yahoo Finance symbol convention so libraries like `yfinance` and `pandas-datareader` can consume it without further munging. There is no application code. The repository exists so downstream tools can pin to a reviewed, versioned universe file rather than re-scraping the API on every run.
 
-Consumers include [`etorotrade`](https://github.com/weirdapps/etorotrade), which reads this file as the input universe for Yahoo Finance signal processing.
+The primary consumer is [`etorotrade`](https://github.com/weirdapps/etorotrade), which reads this file as the input universe for its Yahoo Finance signal pipeline.
 
-## The dataset
+## Dataset
 
-`instruments.csv` is a UTF-8, header-first CSV with three columns:
+Single file, `instruments.csv`. UTF-8, no BOM, header-first, comma-separated, three columns.
 
 | Column | Description | Examples |
 |---|---|---|
-| `symbol` | Yahoo Finance style ticker | `AAPL`, `VOD.L`, `BMW.DE`, `9988.HK`, `VOLV-B.ST` |
-| `company` | Human-readable issuer or fund name | `Apple`, `Volkswagen AG`, `Alibaba Group Holding Ltd (Hong Kong)` |
-| `exchange` | eToro exchange label | `Nasdaq`, `NYSE`, `LSE`, `FRA`, `Hong Kong Exchanges`, `Stockholm  Stock Exchange` |
+| `symbol` | Yahoo Finance style ticker | `AAPL`, `VOD.L`, `SAP.DE`, `9988.HK`, `VOLV-B.ST` |
+| `company` | Issuer or fund name | `Apple`, `Volkswagen AG`, `Alibaba Group Holding Ltd (Hong Kong)` |
+| `exchange` | eToro exchange label | `Nasdaq`, `NYSE`, `LSE`, `FRA`, `Hong Kong Exchanges` |
 
-Row count and column names are enforced by CI (see below), so downstream code can rely on them.
+Snapshot facts (verified against the file at the last commit that touched it; check `git log -1 -- instruments.csv` for the date):
 
-### Exchange coverage
-
-48 distinct exchanges. The largest cohorts (as of the current snapshot) are Nasdaq (3,660), NYSE (2,609), LSE (1,050), ASX / Sydney (852), Euronext Paris (572), Frankfurt (531), LSE AIM (488), Stockholm (430), Xetra ETFs (318), Oslo (281), Hong Kong (243), and Tokyo (225). Smaller venues include Borsa Italiana, Helsinki, Amsterdam, Copenhagen, Brussels, SIX, Madrid, Vienna, Warsaw, Dublin, Dubai, Abu Dhabi, Budapest, and Prague.
+- 12,544 instruments across 32 distinct exchange labels.
+- All symbols unique and non-empty (CI enforces both).
+- 21 rows carry non-ASCII characters in `company` (e.g. `Wärtsilä Oyj Abp`, `Industrivärden, AB ser. A`).
 
 ### Symbol normalisation rules
 
-Symbols are converted from eToro's native format to Yahoo Finance format so the file can be used as-is by libraries like `yfinance` and `pandas-datareader`:
+Symbols follow Yahoo Finance convention rather than eToro's native `.US` scheme, so the CSV drops straight into `yfinance`:
 
 - `.US` suffix stripped (`AAPL.US` becomes `AAPL`).
 - Hong Kong tickers zero-padded to 4 digits with `.HK` suffix (`9988.HK`, `0939.HK`).
-- Scandinavian share classes hyphenated (`VOLV-B.ST`, `CARL-B.CO`, `ERIC-A.ST`).
-- `.RTH` and `.DELISTED` variants excluded.
+- Scandinavian dual-class shares hyphenated (`VOLV-B.ST`, `CARL-B.CO`, `ERIC-A.ST`).
+- `.RTH` (extended-hours) and `.DELISTED` variants excluded.
+- eToro EUR-denominated shadow listings retained with a `.EUR` suffix (`AAPL.EUR`, `GOOG.EUR`, `META.EUR`); ten rows total.
 
-## Data source
+### Exchange coverage
 
-```text
-GET https://www.etoro.com/api/public/v1/instruments/discover
-```
+The 32 exchange labels present, ordered by instrument count. Labels are eToro's own strings; a couple carry quirks worth noting when filtering (`LSE_AIM` uses an underscore, `Stockholm  Stock Exchange` contains a double space). Match against the exact strings below.
 
-Asset classes fetched: Stocks and ETFs. The eToro Public API requires `X-API-KEY`, `X-USER-KEY`, `X-REQUEST-ID` (UUID), and `User-Agent` headers; details are not required to consume the CSV, only to regenerate it.
+| Exchange | Rows |
+|---|---:|
+| Nasdaq | 3,660 |
+| NYSE | 2,609 |
+| LSE | 1,050 |
+| Sydney | 852 |
+| Euronext Paris | 572 |
+| FRA | 531 |
+| LSE_AIM | 488 |
+| Stockholm  Stock Exchange | 430 |
+| Xetra ETFs | 318 |
+| Oslo Stock Exchange | 281 |
+| Hong Kong Exchanges | 243 |
+| Tokyo Stock Exchange | 225 |
+| Borsa Italiana | 200 |
+| Helsinki Stock Exchange | 175 |
+| Euronext Amsterdam | 135 |
+| Copenhagen Stock Exchange | 126 |
+| OTC Markets Stock Exchange | 98 |
+| Euronext Brussels | 95 |
+| SIX | 67 |
+| LSE AIM Auction | 67 |
+| Bolsa De Madrid | 54 |
+| Chicago Board Options Exchange | 51 |
+| Vienna | 40 |
+| Abu Dhabi | 34 |
+| Euronext Lisbon | 31 |
+| Dubai Financial Market | 29 |
+| Warsaw | 26 |
+| Budapest | 20 |
+| Dublin EN | 18 |
+| Prague SE | 9 |
+| LSE Auction | 9 |
+| Tadawul | 1 |
 
 ## Usage
 
-Read straight from GitHub or clone the repo. Example with `pandas`:
+Read straight from GitHub or clone the repo. With `pandas`:
 
 ```python
 import pandas as pd
 
 instruments = pd.read_csv("instruments.csv")
 
-# Filter by exchange
+# Filter by exchange (use the exact label from the table above)
 nasdaq = instruments[instruments["exchange"] == "Nasdaq"]
 
 # Look up a specific ticker
@@ -64,39 +96,51 @@ apple = instruments[instruments["symbol"] == "AAPL"]
 instruments["exchange"].value_counts()
 ```
 
-Pure stdlib works too:
+Pure stdlib works too, no dependencies required:
 
 ```python
 import csv
+
 with open("instruments.csv") as f:
     for row in csv.DictReader(f):
         print(row["symbol"], row["company"], row["exchange"])
 ```
 
-## Refreshing the data
+## Data provenance and refresh
 
-There is intentionally no committed extractor. To refresh:
+The dataset originates from a single eToro Public API call, filtered to stocks and ETFs, then run through the normalisation rules above.
 
-1. Call `GET https://www.etoro.com/api/public/v1/instruments/discover` with the required headers.
+```mermaid
+flowchart LR
+    A[eToro Public API<br/>GET /instruments/discover] --> B[Filter to<br/>Stocks + ETFs]
+    B --> C[Normalise symbols<br/>to Yahoo format]
+    C --> D[Overwrite<br/>instruments.csv]
+    D --> E[Open PR to master]
+    E --> F{CI validation:<br/>header, row count,<br/>uniqueness, non-empty}
+    F -->|pass| G[Merge]
+    F -->|fail| H[Reject]
+```
+
+There is intentionally no committed extractor. To refresh the file:
+
+1. Call `GET https://www.etoro.com/api/public/v1/instruments/discover` with the required headers (`X-API-KEY`, `X-USER-KEY`, `X-REQUEST-ID` as a UUID, and a `User-Agent`).
 2. Filter to Stocks and ETFs.
-3. Apply the normalisation rules above.
-4. Overwrite `instruments.csv` and open a PR. CI will reject the change if the schema or row count drifts.
-
-Snapshot date is visible via `git log -1 -- instruments.csv`.
+3. Apply the normalisation rules from the section above.
+4. Overwrite `instruments.csv` and open a PR. CI will reject the change if the schema drifts, the row count falls below 1,000, symbols duplicate, or any symbol is empty.
 
 ## Continuous integration
 
 Three workflows run on push and pull request against `master`:
 
 - [`ci.yml`](.github/workflows/ci.yml): inline Python (3.12, stdlib only) that asserts the header is exactly `symbol,company,exchange`, that there are at least 1,000 rows, that every symbol is unique, and that no symbol is empty.
-- [`sonarcloud.yml`](.github/workflows/sonarcloud.yml): SonarCloud scan on the non-CSV, non-doc surface (see `sonar-project.properties`). Skipped automatically if `SONAR_TOKEN` is not set.
+- [`sonarcloud.yml`](.github/workflows/sonarcloud.yml): SonarCloud scan on the non-CSV, non-doc surface (see `sonar-project.properties`). Skipped automatically if `SONAR_TOKEN` is not configured.
 - [`dependabot-auto-merge.yml`](.github/workflows/dependabot-auto-merge.yml): auto-squashes Dependabot patch, minor, and grouped updates; majors require manual review.
 
 Dependabot itself watches `github-actions` weekly (see [`.github/dependabot.yml`](.github/dependabot.yml)).
 
 ## Local validation
 
-Run the exact CI check against your working tree:
+Run the same check CI runs, against your working tree:
 
 ```bash
 python - <<'PY'
@@ -113,7 +157,7 @@ PY
 
 ## Security
 
-See [SECURITY.md](SECURITY.md). Vulnerabilities to `plessas@nbg.gr`, not public issues.
+See [SECURITY.md](SECURITY.md). Vulnerabilities go to plessas@nbg.gr, not public issues.
 
 ## License
 
