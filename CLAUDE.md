@@ -1,12 +1,12 @@
 # etoro_tickers
 
-Static reference dataset of all financial instruments available on the eToro platform. No application code — this is a pure data repository with CI validation.
+Static reference dataset of all financial instruments available on the eToro platform. No application code; this is a pure data repository with CI validation.
 
 ## What's Here
 
 ```
 etoro_tickers/
-├── instruments.csv     ← 12,544 rows: symbol, company, exchange (last refreshed 2026-05-25)
+├── instruments.csv     ← 12,544 rows: symbol, company, exchange (last refreshed 2026-05-27)
 └── .github/workflows/
     ├── ci.yml          ← CSV validation
     ├── sonarcloud.yml
@@ -15,22 +15,22 @@ etoro_tickers/
 
 ## The Dataset
 
-`instruments.csv` — three columns:
-- `symbol`: Yahoo Finance format (eToro raw API normalized — `.US` stripped, HK zero-padded, Scandinavian classes hyphenated, delisted/RTH variants excluded)
+`instruments.csv`, three columns:
+- `symbol`: Yahoo Finance format (eToro raw API normalized: `.US` stripped, HK zero-padded, Scandinavian classes hyphenated, delisted/RTH variants excluded)
 - `company`: human-readable name
 - `exchange`: exchange code
 
-Source: `GET https://www.etoro.com/api/public/v1/instruments/discover` (Stocks + ETFs). Legacy alias `https://www.etoro.com/api/public/v1/...` still works.
+Source: `GET https://www.etoro.com/api/public/v1/instruments/discover` (Stocks + ETFs).
 
 ## eToro API
 
-Canonical domain: `https://www.etoro.com/api/public/v1`
-Legacy alias: `https://www.etoro.com/api/public/v1` (works but not canonical)
+Canonical domain: `https://www.etoro.com/api/public/v1` (documented endpoint, path prefix `/api/public/v1/`)
+Legacy host: `https://public-api.etoro.com/api/v1` (separate host, path prefix `/api/v1/`; throttles silently under batch load, do not use for high-volume calls)
 Auth: X-API-KEY + X-USER-KEY (regular, not PERSONAL) + X-REQUEST-ID (UUID) + User-Agent
 
 ## Refreshing the Data
 
-No tooling is committed — re-fetch from the eToro API and replace `instruments.csv`. The CI validation will catch format regressions.
+No tooling is committed; re-fetch from the eToro API and replace `instruments.csv`. The CI validation will catch format regressions.
 
 ## Testing / Validation
 
@@ -60,4 +60,4 @@ print(f'OK: {len(rows)} instruments')
 
 ## Role in the Ecosystem
 
-`etorotrade` ingests these 12,544 tickers as its universe for Yahoo Finance signal processing, producing the `etoro.csv` of ~4,051 processed instruments used in daily briefings and portfolio analysis.
+`etorotrade` ingests these 12,544 tickers as its universe for Yahoo Finance signal processing, producing the `etoro.csv` of scored instruments used in daily briefings and portfolio analysis.
