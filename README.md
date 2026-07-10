@@ -111,7 +111,7 @@ with open("instruments.csv") as f:
 The dataset originates from a single eToro Public API call, filtered to stocks and ETFs, then run through the normalisation rules above.
 
 ```mermaid
-flowchart LR
+flowchart TD
     A[eToro Public API<br/>GET /instruments/discover] --> B[Filter to<br/>Stocks + ETFs]
     B --> C[Normalise symbols<br/>to Yahoo format]
     C --> D[Overwrite<br/>instruments.csv]
