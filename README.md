@@ -178,7 +178,8 @@ PY
 
 ## Security
 
-See [SECURITY.md](SECURITY.md). Vulnerabilities go to plessas@nbg.gr, not public issues.
+See [SECURITY.md](SECURITY.md). Report vulnerabilities privately through this
+repository's **Security** tab, not as public issues.
 
 ## License
 
